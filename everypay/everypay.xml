@@ -1,0 +1,52 @@
+<extension version="1.0" type="plugin" group="vmpayment">
+    <name>Everypay</name>
+    <creationDate>October 19 2015</creationDate>
+    <author>Everypay</author>
+    <authorUrl>https://www.everypay.gr</authorUrl>
+    <copyright>Copyright (C) 2015 Everypay.</copyright>
+    <license>https://opensource.org/licenses/MIT</license>
+    <version>2.3.3</version>
+    <description>Everypay</description>
+    <files>
+        <filename plugin="everypay">everypay.php</filename>
+        <folder>language</folder>
+        <folder>assets</folder>
+    </files>
+    <vmconfig>
+        <fields name="params">
+            <fieldset name="basic" addfieldpath="/plugins/vmpayment/everypay/everypay/fields">
+
+                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_PARAMS" level="level1"/>
+                <field name="hostname" type="text" size="50"
+                       default="https://api.everypay.gr"
+                       label="VMPAYMENT_EVERYPAY_HOSTNAME"
+                       description="VMPAYMENT_EVERYPAY_HOSTNAME_DESC"/>
+                <field name="secret_key" type="text" size="50" default=""
+                       label="VMPAYMENT_EVERYPAY_SECRET_KEY"
+                       description="VMPAYMENT_EVERYPAY_SECRET_KEY_DESC"/>
+                <field name="public_key" type="text" size="50" default=""
+                       label="VMPAYMENT_EVERYPAY_PUBLIC_KEY"
+                       description="VMPAYMENT_EVERYPAY_PUBLIC_KEY_DESC"/>
+
+
+                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_SANDBOX_PARAMS" level="level1"/>
+                <field name="sandbox" type="radio" default="0" label="VMPAYMENT_EVERYPAY_USE_SANDBOX"
+                       description="VMPAYMENT_EVERYPAY_USE_SANDBOX_DESC">
+                    <option value="0">COM_VIRTUEMART_NO</option>
+                    <option value="1">COM_VIRTUEMART_YES</option>
+                </field>
+                <field name="sandbox_hostname" type="text" size="50"
+                       default="https://sandbox-api.everypay.gr"
+                       label="VMPAYMENT_EVERYPAY_SANDBOX_HOSTNAME"
+                       description="VMPAYMENT_EVERYPAY_SANDBOX_HOSTNAME_DESC"/>
+                <field name="sandbox_secret_key" type="text" size="50" default=""
+                       label="VMPAYMENT_EVERYPAY_SANDBOX_SECRET_KEY"
+                       description="VMPAYMENT_EVERYPAY_SANDBOX_SECRET_KEY_DESC"/>
+                <field name="sandbox_public_key" type="text" size="50" default=""
+                       label="VMPAYMENT_EVERYPAY_SANDBOX_PUBLIC_KEY"
+                       description="VMPAYMENT_EVERYPAY_SANDBOX_PUBLIC_KEY_DESC"/>
+            </fieldset>
+
+        </fields>
+    </vmconfig>
+</extension>

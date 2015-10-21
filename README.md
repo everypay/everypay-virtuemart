@@ -1,0 +1,3 @@
+# Everypay plugin for VirtueMart.
+
+Development in progress ...
