@@ -10,7 +10,7 @@
     <files>
         <filename plugin="everypay">everypay.php</filename>
         <folder>language</folder>
-        <folder>assets</folder>
+        <folder>lib</folder>
     </files>
     <vmconfig>
         <fields name="params">

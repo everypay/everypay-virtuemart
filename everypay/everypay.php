@@ -1,7 +1,6 @@
 <?php
 
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
-error_reporting(E_ALL);
 defined('_JEXEC') or die('Restricted access');
 
 if (!class_exists('Creditcard')) {
@@ -125,93 +124,92 @@ class plgVmpaymentEverypay extends vmPSPlugin
 
                 $this->_currentMethod->$method_name = $this->renderPluginName($this->_currentMethod);
 
+                $sandbox = $this->_currentMethod->sandbox;
+                $sandbox_msg = "";
+                if ($sandbox) {
+                    $sandbox_msg .= '<br />' . vmText::_('VMPAYMENT_EVERYPAY_SANDBOX_TEST_NUMBERS');
+                }
                 $html = $this->getPluginHtml($this->_currentMethod, $selected, $methodSalesPrice);
-                if ($selected == $this->_currentMethod->virtuemart_paymentmethod_id) {
-                    $this->populateCreditcard($cart);
+                $html .= '<br /><span class="vmpayment_cardinfo">' . vmText::_('VMPAYMENT_EVERYPAY_COMPLETE_FORM') . $sandbox_msg . '</span>';
+
+                if ($selected == $this->_currentMethod->virtuemart_paymentmethod_id
+                    && $this->hasBillingAddress($cart)
+                ) {
+                    $html .= $this->displayForm($cart, $sandbox);
                 }
 
-				if (empty($this->_currentMethod->creditcards)) {
-					$this->_currentMethod->creditcards = self::getCreditCards();
-				} elseif (!is_array($this->_currentMethod->creditcards)) {
-					$this->_currentMethod->creditcards = (array)$this->_currentMethod->creditcards;
-                }
-
-				$sandbox_msg = "";
-				if ($this->_currentMethod->sandbox) {
-					$sandbox_msg .= '<br />' . vmText::_('VMPAYMENT_EVERYPAY_SANDBOX_TEST_NUMBERS');
-				}
-
-                $publicKey = $this->getPublicKey();
-				$cvv_images = $this->_displayCVVImages($this->_currentMethod);
-				$html .= '<br /><span class="vmpayment_cardinfo">' . vmText::_('VMPAYMENT_EVERYPAY_COMPLETE_FORM') . $sandbox_msg . '
-                <script type="text/javascript" src="https://js.everypay.gr/everypay.js"></script>
-                <script type="text/javascript" src="'.JURI::root().'plugins/vmpayment/everypay/assets/js/everypay.js"></script>
-                <script type="text/javascript">
-                    Everypay.setPublicKey("'.$publicKey.'");
-                </script>
-		    <table border="0" cellspacing="0" cellpadding="2" width="100%">
-		    <tr valign="top">
-		        <td nowrap width="10%" align="right">
-		        	<label for="cc_type">' . vmText::_('VMPAYMENT_EVERYPAY_HOLDER_NAME') . '</label>
-                    <input type="hidden" id="everypay-key" value="'.$publicKey.'" />
-		        </td>
-		        <td>
-
-		        <input type="text" data-card="holder_name" class="inputbox" id="cc_name_' . $this->_currentMethod->virtuemart_paymentmethod_id . '" name="cc_name_' . $this->_currentMethod->virtuemart_paymentmethod_id . '" value="' . self::$_cc_name . '"    autocomplete="off" />
-		    </td>
-		    </tr>
-		    <tr valign="top">
-		        <td nowrap width="10%" align="right">
-		        	<label for="cc_type">' . vmText::_('VMPAYMENT_EVERYPAY_CCNUM') . '</label>
-		        </td>
-		        <td>
-		        <input type="text" data-card="card_number" class="inputbox" id="cc_number_' . $this->_currentMethod->virtuemart_paymentmethod_id . '" name="cc_number_' . $this->_currentMethod->virtuemart_paymentmethod_id . '" value="' . self::$_cc_number . '"    autocomplete="off" />
-		        <div id="cc_cardnumber_errormsg_' . $this->_currentMethod->virtuemart_paymentmethod_id . '"></div>
-		    </td>
-		    </tr>
-		    <tr valign="top">
-		        <td nowrap width="10%" align="right">
-		        	<label for="cc_cvv">' . vmText::_('VMPAYMENT_EVERYPAY_CVV2') . '</label>
-		        </td>
-		        <td>
-		            <input type="text" c data-card="cvv" lass="inputbox" id="cc_cvv_' . $this->_currentMethod->virtuemart_paymentmethod_id . '" name="cc_cvv_' . $this->_currentMethod->virtuemart_paymentmethod_id . '" maxlength="4" size="5" value="' . self::$_cc_cvv . '" autocomplete="off" />
-
-			<span class="hasTip" title="' . vmText::_('VMPAYMENT_EVERYPAY_WHATISCVV') . '::' . vmText::sprintf("VMPAYMENT_EVERYPAY_WHATISCVV_TOOLTIP", $cvv_images) . ' ">' .
-					vmText::_('VMPAYMENT_EVERYPAY_WHATISCVV') . '
-			</span></td>
-		    </tr>
-		    <tr>
-		        <td nowrap width="10%" align="right">' . vmText::_('VMPAYMENT_EVERYPAY_EXDATE') . '</td>
-		        <td> ';
-				$html .= shopfunctions::listMonths('cc_expire_month_' . $this->_currentMethod->virtuemart_paymentmethod_id, self::$_cc_expire_month, " data-card=\"expiration_month\"");
-				$html .= " / ";
-				$html .= shopfunctions::listYears('cc_expire_year_' . $this->_currentMethod->virtuemart_paymentmethod_id, self::$_cc_expire_year, null, null, " data-card=\"expiration_year\"");
-				$html .= '<div id="cc_expiredate_errormsg_' . $this->_currentMethod->virtuemart_paymentmethod_id . '"></div>';
-				$html .= '</td>  </tr>  	';
-
-                $html .= '
-		    <tr valign="top">
-		        <td nowrap width="10%" align="right" colspan="2">
-                    <input type="hidden" data-amount="'.($cart->cartPrices['billTotal'] * 100 ).'" />
-                ';
-
-                if ($token = $this->getToken()) {
-                    $html .= '
-                    <input type="hidden" name="everypayToken" value="'.$token.'" />
-                    ';
-                    } else {
-                        $html .= '
-                            <a class="btn btn-payment btn-primary" id="btn-payment-cc">'.JText::_ ('VMPAYMENT_EVERYPAY_PAY').'</a>
-                        ';
-                    }
-                $html .= '</td></tr></table></span>';
 				$htmla[] = $html;
 			}
 		}
 		$htmlIn[] = $htmla;
 
 		return true;
-	}
+    }
+
+    private function hasBillingAddress(VirtueMartCart $cart)
+    {
+        return is_array($cart->BT) && !isset($cart->BT[0]);
+    }
+
+    private function displayForm(VirtueMartCart $cart, $sandbox)
+    {
+
+        $publicKey = $this->getPublicKey();
+        return '<style>
+                    .everypay-button{display: none !important}
+                </style>
+                <script type="text/javascript" class="everypay-script"
+                    src="https://button.everypay.gr/js/button.js"
+                    data-key="'.$publicKey.'"
+                    data-sandbox="0"
+                    data-callback="handleTokenResponse"
+                    data-amount="'.($cart->cartPrices['billTotal'] * 100 ).'">
+                </script>
+
+                <script type="text/javascript">
+
+                    jQuery(\'#checkoutForm\').on(\'submit\', function (e) {
+                        var data = jQuery(\'#checkoutForm\').serializeArray();
+                        var $is = isCheckout(data);
+                        console.log(e);
+                        if ($is) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            jQuery(\'.everypay-button\').trigger(\'click\');
+                            return false;
+                        }
+                    });
+                    function handleTokenResponse(response) {
+                        var $form = jQuery("#checkoutForm");
+
+                        if (response.error) {
+                            alert(response.error.message);
+                        } else {
+                            var token = response.token;
+                            $form.append(jQuery(\'<input type="hidden" name="everypayToken"/>\').val(token));
+                        }
+                        $form.unbind(\'submit\');
+                        $form.submit();
+                    }
+                    function isCheckout(data) {
+                        var checkout = false;
+                        var hasToken = false;
+                        for (var i=0; i< data.length; i++) {
+                            if (data[i].name == \'checkout\'
+                                && data[i].value == \'1\'
+                            ) {
+                               checkout = true;
+                            }
+                            if (data[i].name == \'everypayToken\') {
+                               hasToken = true;
+                            }
+                        }
+
+                        return checkout && false == hasToken;
+                    }
+                </script>
+';
+    }
 
     /**
 	 * This is for adding the input data of the payment method to the cart, after selecting
@@ -223,7 +221,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 	 */
     public function plgVmOnSelectCheckPayment(VirtueMartCart $cart, &$msg)
     {
-
 		if (!$this->selectedThisByMethodId($cart->virtuemart_paymentmethod_id)) {
 			return null; // Another method was selected, do nothing
 		}
@@ -232,11 +229,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
 			return false;
 		}
 
-        $this->populateCreditcard($cart);
-
-        $isValid = $this->_validate_creditcard_data(true);
-
-        return $isValid;
+        return $true;
 	}
 
     public function plgVmonSelectedCalculatePricePayment(VirtueMartCart $cart, array &$cart_prices, &$cart_prices_name) {
@@ -250,7 +243,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 	 */
     function plgVmOnCheckoutCheckDataPayment(VirtueMartCart $cart)
     {
-        var_dump(__FUNCTION__);
 		if (!$this->selectedThisByMethodId($cart->virtuemart_paymentmethod_id)) {
 			return null; // Another method was selected, do nothing
 		}
@@ -260,19 +252,18 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		}
 
         if ($token = $this->getToken()) {
-            var_dump($token);
-            Everypay\Everypay::setApiKey($this->getSecretKey());
-            Everypay\Payment::setClientOption(Everypay\Http\Client\CurlClient::SSL_VERIFY_PEER, 0);
-            $response = Everypay\Payment::create(array('token' => $token));
-            print_r($response);
+	    	$session = JFactory::getSession();
+    		$session->set('everypay_token', $token, 'vm');
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     private function getToken()
     {
-        return vRequest::getVar('everypayToken' . $paymentmethod_id, null);
+        return vRequest::getVar('everypayToken' . $paymentmethod_id, null)
+            ?: JFactory::getSession()->get('everypay_token', null, 'vm');
     }
 
     function _validate_creditcard_data($enqueueMessage = true)
@@ -433,17 +424,61 @@ class plgVmpaymentEverypay extends vmPSPlugin
 
     function plgVmConfirmedOrder(VirtueMartCart $cart, $order)
     {
-        return false;
+        if (!($this->_currentMethod = $this->getVmPluginMethod($order['details']['BT']->virtuemart_paymentmethod_id))) {
+			return null; // Another method was selected, do nothing
+		}
+		if (!$this->selectedThisElement($this->_currentMethod->payment_element)) {
+            return FALSE;
+		}
+
+        $session = JFactory::getSession();
+		$return_context = $session->getId();
+		// Prepare data that should be stored in the database
+		$dbValues['order_number'] = $order['details']['BT']->order_number;
+		$dbValues['virtuemart_order_id'] = $order['details']['BT']->virtuemart_order_id;
+		$dbValues['payment_method_id'] = $order['details']['BT']->virtuemart_paymentmethod_id;
+		$dbValues['return_context'] = $return_context;
+		$dbValues['payment_name'] = parent::renderPluginName($this->_currentMethod);
+		$dbValues['cost_per_transaction'] = $this->_currentMethod->cost_per_transaction;
+		$dbValues['cost_percent_total'] = $this->_currentMethod->cost_percent_total;
+		$dbValues['payment_order_total'] = $totalInPaymentCurrency['value'];
+		$dbValues['payment_currency'] = $payment_currency_id;
+		$this->debugLog("before store", "plgVmConfirmedOrder", 'debug');
+
+
+        Everypay\Everypay::setApiKey($this->getSecretKey());
+        Everypay\Payment::setClientOption(Everypay\Http\Client\CurlClient::SSL_VERIFY_PEER, 0);
+        $token = $this->getToken();
+        $response = Everypay\Payment::create(array('token' => $token));
+
+        if (isset($response->error)) {
+			$new_status = $this->_currentMethod->payment_declined_status;
+			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, $html);
+			return; // will not process the order
+        }
+
+        $dbValues['everypay_response_token'] = $response->token;
+        $dbValues['everypay_response_description'] = $response->description;
+        $dbValues['everypay_response_status'] = $response->status;
+        $dbValues['everypay_response_last_four'] = $response->last_four;
+        $dbValues['everypay_response_holder_name'] = $response->holder_name;
+        $dbValues['payment_order_total'] = number_format($response->amount / 100, 2);
+		$this->storePSPluginInternalData($dbValues);
+		$cart->emptyCart();
+		$session = JFactory::getSession();
+		$session->clear('everypay_token', 'vm');
     }
 
-    private function populateCreditcard(VirtueMartCart $cart)
-    {
-        $paymentmethod_id = $cart->virtuemart_paymentmethod_id ?: 1;
-        //$cart->creditcard_id = vRequest::getVar('creditcard', '0');
-        self::$_cc_name = vRequest::getVar('cc_name_' . $paymentmethod_id, '');
-        self::$_cc_number = str_replace(" ", "", vRequest::getVar('cc_number_' . $paymentmethod_id, ''));
-        self::$_cc_cvv = vRequest::getVar('cc_cvv_' . $paymentmethod_id, '');
-        self::$_cc_expire_month = vRequest::getVar('cc_expire_month_' . $paymentmethod_id, '');
-        self::$_cc_expire_year = vRequest::getVar('cc_expire_year_' . $paymentmethod_id, '');
-    }
+    function _handlePaymentCancel($virtuemart_order_id, $html) {
+
+		if (!class_exists('VirtueMartModelOrders')) {
+			require(JPATH_VM_ADMINISTRATOR . DS . 'models' . DS . 'orders.php');
+		}
+		$modelOrder = VmModel::getModel('orders');
+		//$modelOrder->remove(array('virtuemart_order_id' => $virtuemart_order_id));
+		// error while processing the payment
+		$mainframe = JFactory::getApplication();
+		$mainframe->enqueueMessage($html);
+		$mainframe->redirect(JRoute::_('index.php?option=com_virtuemart&view=cart&task=editpayment', FALSE), vmText::_('COM_VIRTUEMART_CART_ORDERDONE_DATA_NOT_VALID'));
+	}
 }
