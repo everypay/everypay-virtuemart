@@ -447,13 +447,13 @@ class plgVmpaymentEverypay extends vmPSPlugin
 
 
         Everypay\Everypay::setApiKey($this->getSecretKey());
-        Everypay\Payment::setClientOption(Everypay\Http\Client\CurlClient::SSL_VERIFY_PEER, 0);
+        Everypay\Everypay::$isTest = (boolean) $this->_currentMethod->sandbox;
         $token = $this->getToken();
         $response = Everypay\Payment::create(array('token' => $token));
 
         if (isset($response->error)) {
 			$new_status = $this->_currentMethod->payment_declined_status;
-			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, $html);
+			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id);
 			return; // will not process the order
         }
 
@@ -469,7 +469,9 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$session->clear('everypay_token', 'vm');
     }
 
-    function _handlePaymentCancel($virtuemart_order_id, $html) {
+    function _handlePaymentCancel($virtuemart_order_id)
+    {
+        $html = null;
 
 		if (!class_exists('VirtueMartModelOrders')) {
 			require(JPATH_VM_ADMINISTRATOR . DS . 'models' . DS . 'orders.php');
