@@ -125,12 +125,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
                 $this->_currentMethod->$method_name = $this->renderPluginName($this->_currentMethod);
 
                 $sandbox = $this->_currentMethod->sandbox;
-                $sandbox_msg = "";
-                if ($sandbox) {
-                    $sandbox_msg .= '<br />' . vmText::_('VMPAYMENT_EVERYPAY_SANDBOX_TEST_NUMBERS');
-                }
                 $html = $this->getPluginHtml($this->_currentMethod, $selected, $methodSalesPrice);
-                $html .= '<br /><span class="vmpayment_cardinfo">' . vmText::_('VMPAYMENT_EVERYPAY_COMPLETE_FORM') . $sandbox_msg . '</span>';
 
                 if ($selected == $this->_currentMethod->virtuemart_paymentmethod_id
                     && $this->hasBillingAddress($cart)
@@ -154,20 +149,29 @@ class plgVmpaymentEverypay extends vmPSPlugin
     private function displayForm(VirtueMartCart $cart, $sandbox)
     {
 
+        if ($this->getToken()) {
+            return '';
+        }
         $publicKey = $this->getPublicKey();
         return '<style>
                     .everypay-button{display: none !important}
+                    .button-holder{text-align: right;}
                 </style>
-                <script type="text/javascript" class="everypay-script"
-                    src="https://button.everypay.gr/js/button.js"
-                    data-key="'.$publicKey.'"
-                    data-sandbox="0"
-                    data-callback="handleTokenResponse"
-                    data-amount="'.($cart->cartPrices['billTotal'] * 100 ).'">
-                </script>
-
+                <script type="text/javascript" src="https://button.everypay.gr/js/button.js"></script>
                 <script type="text/javascript">
+                    var EVERYPAY_DATA = {
+                        amount: "'.($cart->cartPrices['billTotal'] * 100 ).'",
+                        key: "'.$publicKey.'",
+                        callback: "",
+                        sandbox: '.$sandbox.'
+                    };
 
+                    var loadButton = setInterval(function () {
+                        try {
+                        EverypayButton.jsonInit(EVERYPAY_DATA, jQuery(\'#checkoutForm\'));
+                        clearInterval(loadButton);
+                        } catch (err) {}
+                    }, 100);
                     jQuery(\'#checkoutForm\').on(\'submit\', function (e) {
                         var data = jQuery(\'#checkoutForm\').serializeArray();
                         var $is = isCheckout(data);
@@ -178,7 +182,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
                             jQuery(\'.everypay-button\').trigger(\'click\');
                             return false;
                         }
-                    });
+                        });
                     function handleTokenResponse(response) {
                         var $form = jQuery("#checkoutForm");
 
@@ -445,15 +449,16 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$dbValues['payment_currency'] = $payment_currency_id;
 		$this->debugLog("before store", "plgVmConfirmedOrder", 'debug');
 
-
+        if ($this->_currentMethod->sandbox) {
+            Everypay\Everypay::$isTest = true;
+        }
         Everypay\Everypay::setApiKey($this->getSecretKey());
-        Everypay\Everypay::$isTest = (boolean) $this->_currentMethod->sandbox;
         $token = $this->getToken();
-        $response = Everypay\Payment::create(array('token' => $token));
+        $response = Everypay\Payment::create(array('token' => $token, 'description' => 'Order #' . $order['details']['BT']->order_number));
 
         if (isset($response->error)) {
 			$new_status = $this->_currentMethod->payment_declined_status;
-			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id);
+			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, $html);
 			return; // will not process the order
         }
 
@@ -469,9 +474,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$session->clear('everypay_token', 'vm');
     }
 
-    function _handlePaymentCancel($virtuemart_order_id)
-    {
-        $html = null;
+    function _handlePaymentCancel($virtuemart_order_id, $html) {
 
 		if (!class_exists('VirtueMartModelOrders')) {
 			require(JPATH_VM_ADMINISTRATOR . DS . 'models' . DS . 'orders.php');

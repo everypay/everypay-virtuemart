@@ -1,15 +1,17 @@
 <extension version="1.0" type="plugin" group="vmpayment">
     <name>Everypay</name>
-    <creationDate>October 19 2015</creationDate>
+    <creationDate>September 18 2015</creationDate>
     <author>Everypay</author>
     <authorUrl>https://www.everypay.gr</authorUrl>
-    <copyright>Copyright (C) 2015 Everypay.</copyright>
+    <copyright>Copyright (C) 2012-2015 Everypay.</copyright>
     <license>https://opensource.org/licenses/MIT</license>
     <version>2.3.3</version>
     <description>Everypay</description>
     <files>
         <filename plugin="everypay">everypay.php</filename>
         <folder>language</folder>
+        <folder>assets</folder>
+        <folder>fields</folder>
         <folder>lib</folder>
     </files>
     <vmconfig>
