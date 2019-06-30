@@ -8,16 +8,17 @@
     <license>https://opensource.org/licenses/MIT</license>
     <version>1.0.0</version>
     <description>Everypay</description>
-    <files>
+    <languages>
+        <language tag="en-GB">language/en-GB/en-GB.plg_vmpayment_everypay.ini</language>
+		<language tag="el-GR">language/el-GR/el-GR.plg_vmpayment_everypay.ini</language>
+    </languages>
+	<files>
         <filename plugin="everypay">everypay.php</filename>
         <filename>autoload.php</filename>
+		<folder>everypay</folder>
         <folder>language</folder>
         <folder>lib</folder>
     </files>
-    <languages>
-        <language tag="en-GB">en-GB.plg_vmpayment_everypay.ini</language>
-		<language tag="el-GR">el-GR.plg_vmpayment_everypay.ini</language>
-    </languages>
     <vmconfig>
         <fields name="params">
             <fieldset name="basic" addfieldpath="/administrator/components/com_virtuemart/fields">
