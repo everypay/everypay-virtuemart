@@ -13,7 +13,11 @@ class Everypay
     /**
      * @var string
      */
-    const VERSION = '2.3.5';
+    const VERSION = '2.4.0';
+
+    public static $isTest = false;
+
+    public static $throwExceptions = false;
 
     /**
      * API request key.
@@ -30,8 +34,6 @@ class Everypay
     protected static $apiUrl = 'https://api.everypay.gr';
 
     protected static $testApiUrl = 'https://sandbox-api.everypay.gr';
-
-    public static $isTest = false;
 
     /**
      * Check for needed requirements.
@@ -110,8 +112,20 @@ class Everypay
             : self::$apiUrl;
     }
 
-    public function throwExceptions()
+    public static function throwExceptions()
     {
-        return false;
+        return self::$throwExceptions;
+    }
+
+    /**
+     * Reset Everypay class to its default values
+     *
+     * @return void
+     */
+    public static function reset()
+    {
+        self::$apiKey = null;
+        self::$isTest = false;
+        self::$throwExceptions = false;
     }
 }

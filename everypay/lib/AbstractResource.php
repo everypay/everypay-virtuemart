@@ -7,6 +7,7 @@ namespace Everypay;
 
 use Everypay\Http\Client\CurlClient;
 use Everypay\Http\Client\ClientInterface;
+use Everypay\Exception\ApiErrorException;
 
 /**
  * Common methods for all API resources.
@@ -29,7 +30,8 @@ abstract class AbstractResource
         'tokens',
         'payments',
         'customers',
-        'notifications'
+        'notifications',
+        'schedules',
     );
 
     private static $clientOptions = array();
@@ -56,6 +58,7 @@ abstract class AbstractResource
     public static function retrieve($token)
     {
         $params = array('token_id' => $token);
+
         return self::invoke(__FUNCTION__, static::RESOURCE_NAME, $params);
     }
 
@@ -87,6 +90,7 @@ abstract class AbstractResource
     public static function update($token, array $params)
     {
         $params['token_id'] = $token;
+
         return self::invoke(__FUNCTION__, static::RESOURCE_NAME, $params);
     }
 
@@ -96,9 +100,10 @@ abstract class AbstractResource
      * @param string|stdClass $token
      * @return stdClass
      */
-    public static function delete($token)
+    public static function delete($token, array $params = array())
     {
-        $params = array('token_id' => $token);
+        $params = array_merge($params, array('token_id' => $token));
+
         return self::invoke(__FUNCTION__, static::RESOURCE_NAME, $params);
     }
 
@@ -112,14 +117,19 @@ abstract class AbstractResource
         self::$client = $client;
     }
 
+    public static function resetClient()
+    {
+        self::$client = null;
+    }
+
     protected static function invoke($action, $resourceName, array $params = array())
     {
         if (!in_array($action, self::$actions)) {
-            throw new Exception\InvalidArgumentException(sprintf("Action %s is not exists", $action));
+            throw new Exception\InvalidArgumentException(sprintf("Action `%s` does not exists", $action));
         }
 
         if (!in_array($resourceName, self::$resources)) {
-            throw new Exception\InvalidArgumentException(sprintf("Resource %s is not exists", $resourceName));
+            throw new Exception\InvalidArgumentException(sprintf("Resource `%s` does not exists", $resourceName));
         }
 
         $options = array(
@@ -131,7 +141,8 @@ abstract class AbstractResource
         $options = array_merge($params, $options);
         $actionClass = 'Everypay\\Action\\' . (ucwords($action));
         $actionInstance = new $actionClass($options);
-        $request = $actionInstance->__invoke();
+        $request = $actionInstance();
+
         return self::handleResponse(self::createClient()->send($request));
     }
 
@@ -139,7 +150,9 @@ abstract class AbstractResource
     {
         $client = self::$client ?: new CurlClient(self::$clientOptions);
         $client->setOption(CurlClient::TIMEOUT, 30);
+        $client->setOption(CurlClient::SSL_VERIFY_PEER, 0);
         $client->setOption(CurlClient::USER_AGENT, 'EveryPay PHP Library ' . Everypay::VERSION);
+        $client->setOption(CurlClient::SSL_VERSION, CURL_SSLVERSION_TLSv1_2);
 
         return $client;
     }
@@ -153,25 +166,35 @@ abstract class AbstractResource
      */
     protected static function handleResponse($response)
     {
+        self::resolveContentType($response);
+
+        $body = $response->getBody();
+        $response = json_decode($body);
+
+        self::resolveErrorResponse($response);
+
+        return $response;
+    }
+
+    private static function resolveContentType($response)
+    {
         $contentType = $response->getHeaderLine('Content-Type');
         if (stripos($contentType, 'application/json') === false) {
             throw new Exception\CurlException(
                 'The returned response is not in json format'
             );
         }
+    }
 
-        $body = $response->getBody();
-        $response = json_decode($body);
-
-        if (isset($response->error->code)) {
-            if (EveryPay::throwExceptions()) {
-                throw new Everypay_Exception_ApiErrorException(
-                    $response->error->message,
-                    $response->error->code
-                );
-            }
+    private static function resolveErrorResponse($response)
+    {
+        if (isset($response->error->code)
+            && EveryPay::throwExceptions()
+        ) {
+            throw new ApiErrorException(
+                $response->error->message,
+                $response->error->code
+            );
         }
-
-        return $response;
     }
 }

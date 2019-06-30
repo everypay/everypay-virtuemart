@@ -1,28 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <extension version="1.0" type="plugin" group="vmpayment">
     <name>Everypay</name>
-    <creationDate>September 18 2015</creationDate>
+    <creationDate>June 30 2019</creationDate>
     <author>Everypay</author>
     <authorUrl>https://www.everypay.gr</authorUrl>
-    <copyright>Copyright (C) 2012-2015 Everypay.</copyright>
+    <copyright>Copyright (C) 2012-2019 Everypay.</copyright>
     <license>https://opensource.org/licenses/MIT</license>
-    <version>2.3.3</version>
+    <version>1.0.0</version>
     <description>Everypay</description>
     <files>
         <filename plugin="everypay">everypay.php</filename>
+        <filename>autoload.php</filename>
         <folder>language</folder>
-        <folder>assets</folder>
-        <folder>fields</folder>
         <folder>lib</folder>
     </files>
+    <languages>
+        <language tag="en-GB">en-GB.plg_vmpayment_everypay.ini</language>
+		<language tag="el-GR">el-GR.plg_vmpayment_everypay.ini</language>
+    </languages>
     <vmconfig>
         <fields name="params">
-            <fieldset name="basic" addfieldpath="/plugins/vmpayment/everypay/everypay/fields">
+            <fieldset name="basic" addfieldpath="/administrator/components/com_virtuemart/fields">
 
-                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_PARAMS" level="level1"/>
-                <field name="hostname" type="text" size="50"
-                       default="https://api.everypay.gr"
-                       label="VMPAYMENT_EVERYPAY_HOSTNAME"
-                       description="VMPAYMENT_EVERYPAY_HOSTNAME_DESC"/>
+                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_PARAMS"/>
+
                 <field name="secret_key" type="text" size="50" default=""
                        label="VMPAYMENT_EVERYPAY_SECRET_KEY"
                        description="VMPAYMENT_EVERYPAY_SECRET_KEY_DESC"/>
@@ -31,22 +32,28 @@
                        description="VMPAYMENT_EVERYPAY_PUBLIC_KEY_DESC"/>
 
 
-                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_SANDBOX_PARAMS" level="level1"/>
+                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_SANDBOX_PARAMS"/>
                 <field name="sandbox" type="radio" default="0" label="VMPAYMENT_EVERYPAY_USE_SANDBOX"
                        description="VMPAYMENT_EVERYPAY_USE_SANDBOX_DESC">
                     <option value="0">COM_VIRTUEMART_NO</option>
                     <option value="1">COM_VIRTUEMART_YES</option>
                 </field>
-                <field name="sandbox_hostname" type="text" size="50"
-                       default="https://sandbox-api.everypay.gr"
-                       label="VMPAYMENT_EVERYPAY_SANDBOX_HOSTNAME"
-                       description="VMPAYMENT_EVERYPAY_SANDBOX_HOSTNAME_DESC"/>
-                <field name="sandbox_secret_key" type="text" size="50" default=""
+
+                <field name="sandbox_secret_key" type="text" size="50"
                        label="VMPAYMENT_EVERYPAY_SANDBOX_SECRET_KEY"
                        description="VMPAYMENT_EVERYPAY_SANDBOX_SECRET_KEY_DESC"/>
-                <field name="sandbox_public_key" type="text" size="50" default=""
+                <field name="sandbox_public_key" type="text" size="50"
                        label="VMPAYMENT_EVERYPAY_SANDBOX_PUBLIC_KEY"
                        description="VMPAYMENT_EVERYPAY_SANDBOX_PUBLIC_KEY_DESC"/>
+
+                <field type="vmtitle" default="VMPAYMENT_EVERYPAY_ORDER_STATUS_SECTION"
+                       description=""/>
+                <field name="status_pending" type="vmorderstate" scope="com_virtuemart" default="U"
+                       label="VMPAYMENT_EVERYPAY_STATUS_PENDING" description="VMPAYMENT_EVERYPAY_STATUS_PENDING_TIP"/>
+                <field name="status_success" type="vmorderstate" scope="com_virtuemart" default="C"
+                       label="VMPAYMENT_EVERYPAY_STATUS_SUCCESS" description="VMPAYMENT_EVERYPAY_STATUS_SUCCESS_TIP"/>
+                <field name="status_canceled" type="vmorderstate" scope="com_virtuemart" default="X"
+                       label="VMPAYMENT_EVERYPAY_STATUS_FAILED" description="VMPAYMENT_EVERYPAY_STATUS_FAILED_TIP"/>
             </fieldset>
 
         </fields>
