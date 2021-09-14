@@ -4,14 +4,35 @@ var terms = document.querySelector("input[type='checkbox']#tos");
 
 if (checkoutForm && submitButton) {
     window.modal = new EverypayModal();
+
     checkoutForm.onsubmit = function (e) {
-        Virtuemart.stopVmLoading();
-        submitButton.removeAttribute('disabled');
-        submitButton.setAttribute('class', 'vm-button-correct')
-        e.preventDefault();
-        e.stopPropagation();
-        loadPayform();
+        if (isCheckout(jQuery(checkoutForm).serializeArray())) {
+            Virtuemart.stopVmLoading();
+            submitButton.removeAttribute('disabled');
+            submitButton.setAttribute('class', 'vm-button-correct')
+            e.preventDefault();
+            e.stopPropagation();
+            loadPayform();
+            return false;
+        }
     }
+}
+
+function isCheckout(data) {
+    var everypay = false;
+    var confirm = false;
+
+    for (var i=0; i< data.length; i++) {
+        if (data[i].name == 'virtuemart_paymentmethod_id' && data[i].value == window.everypayData.paymentMethodId) {
+            everypay = true;
+        }
+
+        if (data[i].name == 'confirm' && data[i].value == '1') {
+            confirm = true;
+        }
+    }
+
+    return confirm && everypay;
 }
 
 function loadPayform()
@@ -54,7 +75,6 @@ function handleTokenResponse(token) {
     input.name = 'everypayToken';
     input.value = token;
     checkoutForm.appendChild(input);
-    
     checkoutForm.submit();
     modal.show_loading();
 }

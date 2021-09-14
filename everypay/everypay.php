@@ -120,7 +120,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		}
 
 		$new_status = '';
-
         $session = JFactory::getSession ();
 		$return_context = $session->getId ();
         $this->logInfo ('plgVmConfirmedOrder order number: ' . $order['details']['BT']->order_number, 'message');
@@ -239,7 +238,8 @@ class plgVmpaymentEverypay extends vmPSPlugin
                     pk: "<?php echo $publicKey ?>",
                     amount: <?php echo $amount ?>,
                     locale: "el",
-                    txnType: "tds"
+                    txnType: "tds",
+                    paymentMethodId: '<?php echo $this->_currentMethod->virtuemart_paymentmethod_id ?? '' ?>'
                 }
             </script>
         <?php
@@ -253,8 +253,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
         return vRequest::getVar('everypayToken' . $paymentMethodId, null)
             ?: JFactory::getSession()->get('everypay_token', null, 'vm');
     }
-
-
+    
     function plgVmOnShowOrderBEPayment ($virtuemart_order_id, $payment_method_id) {
 
         if (!$this->selectedThisByMethodId ($payment_method_id)) {
@@ -339,7 +338,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 	 *
 	 */
 	public function plgVmOnSelectCheckPayment (VirtueMartCart $cart,  &$msg) {
-
 		return $this->OnSelectCheck ($cart);
 	}
 
