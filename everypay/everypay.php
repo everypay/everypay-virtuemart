@@ -1,7 +1,5 @@
 <?php
 
-use Everypay\AssetLoader;
-
 defined ('_JEXEC') or die('Restricted access');
 if (!class_exists ('vmPSPlugin')) {
 	require(VMPATH_PLUGINLIBS . DS . 'vmpsplugin.php');
