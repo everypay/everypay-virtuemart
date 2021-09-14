@@ -1,12 +1,10 @@
-window.modal = new EverypayModal();
 var checkoutForm = document.getElementById('checkoutForm');
 var submitButton = document.getElementById('checkoutFormSubmit');
 var terms = document.querySelector("input[type='checkbox']#tos");
 
 if (checkoutForm && submitButton) {
-
+    window.modal = new EverypayModal();
     checkoutForm.onsubmit = function (e) {
-        console.log(e)
         Virtuemart.stopVmLoading();
         submitButton.removeAttribute('disabled');
         submitButton.setAttribute('class', 'vm-button-correct')
@@ -14,7 +12,6 @@ if (checkoutForm && submitButton) {
         e.stopPropagation();
         loadPayform();
     }
-
 }
 
 function loadPayform()
@@ -57,24 +54,9 @@ function handleTokenResponse(token) {
     input.name = 'everypayToken';
     input.value = token;
     checkoutForm.appendChild(input);
-  //  checkoutForm.submit();
+    
+    checkoutForm.submit();
     modal.show_loading();
-
-    var action = jQuery(checkoutForm).attr('action');
-    var data = jQuery(checkoutForm).serialize();
-    $.ajax({
-        type: "POST",
-        url: action,
-        data: data,
-        dataType: "json",
-        success: function(data) {
-                alert('yess')
-        },
-        error: function() {
-            alert('error handling here');
-        }
-    });
-
 }
 
 function EverypayModal(settings) {
