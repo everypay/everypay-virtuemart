@@ -159,7 +159,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
         );
 
         if (isset($response->error)) {
-			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, vmText::_ ('VMPAYMENT_EVERYPAY_ERROR') );
+			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, '' );
 
 			return;
         }
@@ -209,7 +209,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$session->clear('everypay_token', 'vm');
 
         return TRUE;
-
     }
 
     private function hasBillingAddress(VirtueMartCart $cart)
@@ -253,7 +252,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
         return vRequest::getVar('everypayToken' . $paymentMethodId, null)
             ?: JFactory::getSession()->get('everypay_token', null, 'vm');
     }
-    
+
     function plgVmOnShowOrderBEPayment ($virtuemart_order_id, $payment_method_id) {
 
         if (!$this->selectedThisByMethodId ($payment_method_id)) {
@@ -386,7 +385,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 
                     $sandbox = $this->_currentMethod->sandbox;
                     $html = $this->getPluginHtml($this->_currentMethod, $selected, $methodSalesPrice);
-
                     if ($selected == $this->_currentMethod->virtuemart_paymentmethod_id
                         && $this->hasBillingAddress($cart)
                     ) {

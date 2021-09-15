@@ -5,41 +5,47 @@ var terms = document.querySelector("input[type='checkbox']#tos");
 if (checkoutForm && submitButton) {
     window.modal = new EverypayModal();
 
+
+    submitButton.onclick = function (e) {
+        if (isCheckout()) {
+            if (terms && !terms.checked) {
+                return true;
+            }
+            window.isFromButton = 1;
+        }
+    }
+
     checkoutForm.onsubmit = function (e) {
-        if (isCheckout(jQuery(checkoutForm).serializeArray())) {
+        if (isCheckout() && window.isFromButton === 1) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             Virtuemart.stopVmLoading();
             submitButton.removeAttribute('disabled');
             submitButton.setAttribute('class', 'vm-button-correct')
-            e.preventDefault();
-            e.stopPropagation();
             loadPayform();
+
             return false;
         }
     }
 }
 
-function isCheckout(data) {
-    var everypay = false;
-    var confirm = false;
 
-    for (var i=0; i< data.length; i++) {
-        if (data[i].name == 'virtuemart_paymentmethod_id' && data[i].value == window.everypayData.paymentMethodId) {
-            everypay = true;
-        }
+function isCheckout() {
+    var data = jQuery(checkoutForm).serializeArray();
+    var isEverypayChecked = false;
+    var everypayId = window.everypayData.paymentMethodId;
 
-        if (data[i].name == 'confirm' && data[i].value == '1') {
-            confirm = true;
-        }
+    if (document.querySelector('input[name="virtuemart_paymentmethod_id"][value="'+everypayId+'"]').checked) {
+        isEverypayChecked = true;
     }
 
-    return confirm && everypay;
+    return isEverypayChecked;
 }
 
 function loadPayform()
 {
-    if (terms && !terms.checked) {
-        return;
-    }
+    window.isFromButton = 0;
 
     if (typeof window.modal === "undefined" || typeof everypay === "undefined" || typeof window.everypayData == "undefined") {
         alert('An error occurred. Please reload the page and try again.');
