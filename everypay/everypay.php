@@ -17,43 +17,45 @@ class plgVmpaymentEverypay extends vmPSPlugin
 	public static $_cc_expire_year    = '';
 	public static $_cc_valid          = false;
 	private $_errormessage      = array();
+	static $iframeLoaded = false;
+
+    private $paymentMethodId;
 
     public function __construct(& $subject, $config)
     {
         parent::__construct($subject, $config);
 
         $jlang = JFactory::getLanguage ();
-		$jlang->load('plg_vmpayment_everypay', JPATH_ADMINISTRATOR, NULL, TRUE);
-		$this->_loggable = TRUE;
-		$this->_debug = TRUE;
+		$jlang->load('plg_vmpayment_everypay', JPATH_ADMINISTRATOR, NULL, true);
+		$this->_loggable = true;
+		$this->_debug = true;
 		$this->tableFields = array_keys ($this->getTableSQLFields ());
 		$this->_tablepkey = 'id';
 		$this->_tableId = 'id';
 
 		$varsToPush = array(
-		                    'sandbox'        => array('0', 'int'),
-		                    'sandbox_secret_key'        => array('', 'char'),
-		                    'secret_key'        => array('', 'char'),
-		                    'sandbox_public_key'        => array('', 'char'),
-		                    'public_key'        => array('', 'char'),
-		                    'pay_to_email'        => array('', 'char'),
-		                    'product'          => array('', 'char'),
-		                    'hide_login'          => array(0, 'int'),
-		                    'logourl'             => array('', 'char'),
-		                    'secret_word'         => array('', 'char'),
-		                    'payment_currency'    => array('', 'char'),
-		                    'payment_logos'       => array('', 'char'),
-		                    'countries'           => array('', 'char'),
-		                    'cost_per_transaction'
-		                                          => array('', 'int'),
-		                    'cost_percent_total'
-		                                          => array('', 'int'),
-		                    'min_amount'          => array('', 'int'),
-		                    'max_amount'          => array('', 'int'),
-		                    'tax_id'              => array(0, 'int'),
-		                    'status_pending'      => array('', 'char'),
-		                    'status_success'      => array('', 'char'),
-		                    'status_canceled'     => array('', 'char'));
+            'sandbox' => array('0', 'int'),
+            'sandbox_secret_key' => array('', 'char'),
+            'secret_key' => array('', 'char'),
+            'sandbox_public_key' => array('', 'char'),
+            'public_key'  => array('', 'char'),
+            'pay_to_email' => array('', 'char'),
+            'product' => array('', 'char'),
+            'hide_login' => array(0, 'int'),
+            'logourl' => array('', 'char'),
+            'secret_word' => array('', 'char'),
+            'payment_currency' => array('', 'char'),
+            'payment_logos' => array('', 'char'),
+            'countries' => array('', 'char'),
+            'cost_per_transaction' => array('', 'int'),
+            'cost_percent_total' => array('', 'int'),
+            'min_amount' => array('', 'int'),
+            'max_amount' => array('', 'int'),
+            'tax_id' => array(0, 'int'),
+            'status_pending' => array('', 'char'),
+            'status_success' => array('', 'char'),
+            'status_canceled' => array('', 'char')
+        );
 
 		$this->setConfigParameterable ($this->_configTableFieldName, $varsToPush);
     }
@@ -76,9 +78,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
 			'cost_per_transaction'          => 'decimal(10,2)',
 			'cost_percent_total'            => 'decimal(10,2)',
             'tax_id'                        => 'smallint(1)',
-            
             'user_session'            => 'varchar(255)',
-
 			'everypay_response_token'       => 'char(128)',
 			'everypay_response_description' => 'char(255)',
 			'everypay_response_status'      => 'char(128)',
@@ -86,6 +86,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
 			'everypay_response_last_four'   => 'char(4)',
 			'everypay_response_holder_name' => 'char(255)',
 		);
+
 		return $SQLfields;
 	}
 
@@ -104,22 +105,21 @@ class plgVmpaymentEverypay extends vmPSPlugin
             // JError::raiseWarning(500, $db->getErrorMsg());
             return '';
         }
+
         return $paymentTable;
     }
 
     function plgVmConfirmedOrder(VirtueMartCart $cart, $order)
     {
         if (!($method = $this->getVmPluginMethod ($order['details']['BT']->virtuemart_paymentmethod_id))) {
-			return NULL;
+			return null;
 		} // Another method was selected, do nothing
 
 		if (!$this->selectedThisElement ($method->payment_element)) {
-			return FALSE;
+			return false;
 		}
 
-
 		$new_status = '';
-
         $session = JFactory::getSession ();
 		$return_context = $session->getId ();
         $this->logInfo ('plgVmConfirmedOrder order number: ' . $order['details']['BT']->order_number, 'message');
@@ -130,13 +130,8 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		if (!class_exists ('VirtueMartModelCurrency')) {
 			require(VMPATH_ADMIN . DS . 'models' . DS . 'currency.php');
         }
-        
 
-        $usrBT = $order['details']['BT'];
-        $address = ((isset($order['details']['ST'])) ? $order['details']['ST'] : $order['details']['BT']);
         $totalInPaymentCurrency = vmPSPlugin::getAmountInCurrency($order['details']['BT']->order_total,$method->payment_currency);
-        $cartCurrency = CurrencyDisplay::getInstance($cart->pricesCurrency);
-
 
         // Prepare data that should be stored in the database
         $dbValues['user_session'] = $return_context;
@@ -148,30 +143,25 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$dbValues['payment_currency'] = $method->payment_currency;
 		$dbValues['payment_order_total'] = $totalInPaymentCurrency['value'];
 		$dbValues['tax_id'] = $method->tax_id;
-        //var_dump($dbValues);
+
         if ($method->sandbox == '1') {
             Everypay\Everypay::$isTest = true;
         }
         Everypay\Everypay::setApiKey($this->getSecretKey($method));
         $token = $this->getToken();
-        $response = Everypay\Payment::create(array('token' => $token, 'description' => 'Order #' . $order['details']['BT']->order_number, 'amount' => round($cart->cartPrices['billTotal'],2) * 100 ));
 
-//        $response = new stdClass();
-//
-//        $response->token = 'pmt_payment';
-//        $response->description = 'desc  '. $this->getSecretKey($method);
-//        $response->amount = 10099;
-//        $response->status = 'OK';
-//        $response->last_four = '1234';
-//        $response->holder_name = 'Sotiris';
-
-
-//        var_dump($response);
+        $response = Everypay\Payment::create(
+                array(
+                    'token' => $token,
+                    'description' => 'Order #' . $order['details']['BT']->order_number,
+                    'amount' => round($cart->cartPrices['billTotal'],2) * 100
+                )
+        );
 
         if (isset($response->error)) {
-			$new_status = $method->status_canceled;
-			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, $html);
-			return; // will not process the order
+			$this->_handlePaymentCancel($order['details']['BT']->virtuemart_order_id, '' );
+
+			return;
         }
 
         $new_status = $method->status_success;
@@ -194,7 +184,7 @@ class plgVmpaymentEverypay extends vmPSPlugin
 
         $orderlink='';
         $tracking = VmConfig::get('ordertracking','guests');
-        if($tracking !='none' and !($tracking =='registered' and empty($order['details']['BT']->virtuemart_user_id) )) {
+        if ($tracking !='none' and !($tracking =='registered' and empty($order['details']['BT']->virtuemart_user_id) )) {
 
             $orderlink = 'index.php?option=com_virtuemart&view=orders&layout=details&order_number=' . $order['details']['BT']->order_number;
             if ($tracking == 'guestlink' or ($tracking == 'guests' and empty($order['details']['BT']->virtuemart_user_id))) {
@@ -203,11 +193,11 @@ class plgVmpaymentEverypay extends vmPSPlugin
         }
 
         $html = $this->renderByLayout('post_payment', array(
-            'order_number' =>$order['details']['BT']->order_number,
+            'order_number' => $order['details']['BT']->order_number,
             'order_pass' =>$order['details']['BT']->order_pass,
             'payment_name' => $dbValues['payment_name'],
             'displayTotalInPaymentCurrency' => $totalInPaymentCurrency['display'],
-            'orderlink' =>$orderlink
+            'orderlink' => $orderlink
         ));
 
         //We delete the old stuff
@@ -219,132 +209,49 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$session->clear('everypay_token', 'vm');
 
         return TRUE;
-
     }
 
-    
-
-
-   
     private function hasBillingAddress(VirtueMartCart $cart)
     {
-        return is_array($cart->BT) && !isset($cart->BT[0]);
+        return is_array($cart->BT) && !empty($cart->BT) && !isset($cart->BT[0]);
     }
 
-    private function displayForm(VirtueMartCart $cart, $sandbox)
+    private function displayForm(VirtueMartCart $cart, $isSandbox)
     {
-
-
         if ($this->getToken()) {
             return '';
         }
+
+        $amount = (round($cart->cartPrices['billTotal'],2) * 100 );
         $publicKey = $this->getPublicKey();
-        return '<style>
-                    .everypay-button{display: none !important}
-                    .button-holder{text-align: right;}
-                </style>
-                <script type="text/javascript" src="https://button.everypay.gr/js/button.js"></script>
-                <script type="text/javascript">
-                    var EVERYPAY_DATA = {
-                        amount: "'.(round($cart->cartPrices['billTotal'],2) * 100 ).'",
-                        key: "'.$publicKey.'",
-                        callback: "handleTokenResponse",
-                        sandbox: "'.$sandbox.'",
-                        vm_pm: "'.$vm_pm.'"
-                    };
 
-                    var loadButton = setInterval(function () {
-                        try {
-                        EverypayButton.jsonInit(EVERYPAY_DATA, jQuery(\'#checkoutForm\'));
-                        clearInterval(loadButton);
-                        } catch (err) {}
-                    }, 100);
-                    jQuery(\'#checkoutForm\').on(\'submit\', function (e) {
-                        var data = jQuery(\'#checkoutForm\').serializeArray();
-                        console.log(data);
-                        var $is = isCheckout(data);
-                        //var $is = true;
-                        console.log(e);
-                        if ($is) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            jQuery(\'.everypay-button\').trigger(\'click\');
-                            return false;
-                        }
-                        });
-                    function handleTokenResponse(response) {
-                        var $form = jQuery("#checkoutForm");
+        $html = $this->renderByLayout('iframe', array(
+            'isSandbox' => $isSandbox,
+            'amount' => (round($cart->cartPrices['billTotal'],2) * 100 ),
+            'pk' => $this->getPublicKey()
+        ));
 
-                        if (response.error) {
-                            alert(response.error.message);
-                        } else {
-                            console.log(response.token);
-                            var token = response.token;
-                            $form.append(jQuery(\'<input type="hidden" name="everypayToken"/>\').val(token));
-                        }
-                        $form.unbind(\'submit\');
-                        $form.submit();
-                    }
-                    
-                    function isCheckout(data) {
-                        var everypay = false;
-                        var confirm = false;
-                        var hasToken = false;
-                         
-                        for (var i=0; i< data.length; i++) {
-                            if (data[i].name == \'virtuemart_paymentmethod_id\'
-                                && data[i].value == "'.$cart->virtuemart_paymentmethod_id.'"
-                            ) {
-                               everypay = true;
-                            }
-                            if (data[i].name == \'confirm\'
-                                && data[i].value == \'1\'
-                            ) {
-                               confirm = true;
-                            }
-                            if (data[i].name == \'everypayToken\') {
-                               hasToken = true;
-                            }
-                            
-                        }
+        ?>
+            <script>
+                window.everypayData = {
+                    pk: "<?php echo $publicKey ?>",
+                    amount: <?php echo $amount ?>,
+                    locale: "el",
+                    txnType: "tds",
+                    paymentMethodId: '<?php echo $this->_currentMethod->virtuemart_paymentmethod_id ?? '' ?>'
+                }
+            </script>
+        <?php
 
-                        return everypay && confirm && hasToken == false;
-                    }
-                </script>
-';
+        return $html;
     }
-
-    
-
-    /**
-	 * This is for checking the input data of the payment method within the checkout
-	 *
-	 * @author Valerie Cartan Isaksen
-	 */
-//    function plgVmOnCheckoutCheckDataPayment(VirtueMartCart $cart)
-//    {
-//		if (!$this->selectedThisByMethodId($cart->virtuemart_paymentmethod_id)) {
-//			return null; // Another method was selected, do nothing
-//		}
-//
-//
-//
-//        if ($token = $this->getToken()) {
-//	    	$session = JFactory::getSession();
-//    		$session->set('everypay_token', $token, 'vm');
-//            return true;
-//        }
-//
-//        return false;
-//    }
 
     private function getToken()
     {
-        return vRequest::getVar('everypayToken' . $paymentmethod_id, null)
+        $paymentMethodId = $this->_currentMethod->virtuemart_paymentmethod_id ?? '';
+        return vRequest::getVar('everypayToken' . $paymentMethodId, null)
             ?: JFactory::getSession()->get('everypay_token', null, 'vm');
     }
-
-
 
     function plgVmOnShowOrderBEPayment ($virtuemart_order_id, $payment_method_id) {
 
@@ -362,7 +269,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
             $paymentTable->payment_currency . '" ';
         $db = JFactory::getDBO ();
         $db->setQuery ($q);
-        $currency_code_3 = $db->loadResult ();
         $html = '<table class="adminlist table">' . "\n";
         $html .= $this->getHtmlHeaderBE ();
         $html .= $this->getHtmlRowBE ('PAYMENT_NAME', $paymentTable->payment_name);
@@ -377,51 +283,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
         return $html;
     }
 
-    /**
-	 * Check if the payment conditions are fulfilled for this payment method
-	 *
-	 * @author: Valerie Isaksen
-	 *
-	 * @param $cart_prices: cart prices
-	 * @param $payment
-	 * @return true: if the conditions are fulfilled, false otherwise
-	 *
-	 */
-    protected function checkConditions($cart, $method, $cart_prices)
-    {
-
-        $address = (($cart->ST == 0) ? $cart->BT : $cart->ST);
-
-
-        $countries = array();
-        if (!empty($method->countries)) {
-            if (!is_array($method->countries)) {
-                $countries[0] = $method->countries;
-            } else {
-                $countries = $method->countries;
-            }
-        }
-
-        // probably did not gave his BT:ST address
-        if (!is_array($address)) {
-            $address = array();
-            $address['virtuemart_country_id'] = 0;
-        }
-
-        if (!isset($address['virtuemart_country_id'])) {
-            $address['virtuemart_country_id'] = 0;
-        }
-        if (count($countries) == 0 || in_array($address['virtuemart_country_id'], $countries) || count($countries) == 0) {
-
-            return true;
-        }
-
-        return false;
-    }
-
-
-
-
     private function getPublicKey()
     {
         return $this->_currentMethod->sandbox
@@ -433,12 +294,10 @@ class plgVmpaymentEverypay extends vmPSPlugin
     {
         if ($method->sandbox == '1') {
             return $method->sandbox_secret_key;
-        }else{
-            return $method->secret_key;
         }
-    }
 
-    
+        return $method->secret_key;
+    }
 
     function _handlePaymentCancel($virtuemart_order_id, $html) {
 
@@ -452,13 +311,6 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		$mainframe->enqueueMessage($html);
 		$mainframe->redirect(JRoute::_('index.php?option=com_virtuemart&view=cart&task=editpayment', FALSE), vmText::_('COM_VIRTUEMART_CART_ORDERDONE_DATA_NOT_VALID'));
     }
-    
-
-
-
-    /**
-	 * We must reimplement this triggers for joomla 1.7
-	 */
 
 	/**
 	 * Create the table for this plugin if it does not yet exist.
@@ -485,22 +337,23 @@ class plgVmpaymentEverypay extends vmPSPlugin
 	 *
 	 */
 	public function plgVmOnSelectCheckPayment (VirtueMartCart $cart,  &$msg) {
-
 		return $this->OnSelectCheck ($cart);
 	}
 
-	/**
-	 * plgVmDisplayListFEPayment
-	 * This event is fired to display the pluginmethods in the cart (edit shipment/payment) for exampel
-	 *
-	 * @param object  $cart Cart object
-	 * @param integer $selected ID of the method selected
-	 * @return boolean True on success, false on failures, null when this plugin was not selected.
-	 * On errors, JError::raiseWarning (or JError::raiseError) must be used to set a message.
-	 *
-	 * @author Valerie Isaksen
-	 * @author Max Milbers
-	 */
+    /**
+     * plgVmDisplayListFEPayment
+     * This event is fired to display the plugin methods in the cart (edit shipment/payment)
+     *
+     * @param VirtueMartCart $cart Cart object
+     * @param integer $selected ID of the method selected
+     * @param $htmlIn
+     * @return boolean True on success, false on failures, null when this plugin was not selected.
+     * On errors, JError::raiseWarning (or JError::raiseError) must be used to set a message.
+     *
+     * @throws Exception
+     * @author Max Milbers
+     * @author Valerie Isaksen
+     */
 	public function plgVmDisplayListFEPayment (VirtueMartCart $cart, $selected = 0, &$htmlIn) {
 
         if ($this->getPluginMethods ($cart->vendorId) === 0) {
@@ -508,19 +361,19 @@ class plgVmpaymentEverypay extends vmPSPlugin
                 vmAdminInfo ('displayListFE cartVendorId=' . $cart->vendorId);
                 $app = JFactory::getApplication ();
                 $app->enqueueMessage (vmText::_ ('COM_VIRTUEMART_CART_NO_' . strtoupper ($this->_psType)));
-                return FALSE;
+                return false;
             } else {
-                return FALSE;
+                return false;
             }
         }
 
-        $mname = $this->_psType . '_name';
+        $method_name = $this->_psType . '_name';
         $idN = 'virtuemart_'.$this->_psType.'method_id';
+        $ret = false;
 
-        $ret = FALSE;
         foreach ($this->methods as $method) {
             $this->_currentMethod = $method;
-            //var_dump($cart);
+
             if(!isset($htmlIn[$this->_psType][$method->$idN])) {
                 if ($this->checkConditions ($cart, $method, $cart->cartPrices)) {
 
@@ -528,16 +381,14 @@ class plgVmpaymentEverypay extends vmPSPlugin
                     $prices = $cart->cartPrices;
                     $methodSalesPrice = $this->setCartPrices ($cart, $prices ,$method);
 
-                    //This makes trouble, because $method->$mname is used in  renderPluginName to render the Name, so it must not be called twice!
-                    $method->$mname = $this->renderPluginName ($method);
+                    $method->$method_name = $this->renderPluginName ($method);
 
                     $sandbox = $this->_currentMethod->sandbox;
                     $html = $this->getPluginHtml($this->_currentMethod, $selected, $methodSalesPrice);
-
                     if ($selected == $this->_currentMethod->virtuemart_paymentmethod_id
                         && $this->hasBillingAddress($cart)
                     ) {
-                        $html .= $this->displayForm($cart, $sandbox);
+                       $this->displayForm($cart, $sandbox);
                     }
 
                     $htmlIn[$this->_psType][$method->$idN] = $html;
@@ -573,15 +424,17 @@ class plgVmpaymentEverypay extends vmPSPlugin
 		return $this->onCheckAutomaticSelected ($cart, $cart_prices, $paymentCounter);
 	}
 
-	/**
-	 * This method is fired when showing the order details in the frontend.
-	 * It displays the method-specific data.
-	 *
-	 * @param integer $order_id The order ID
-	 * @return mixed Null for methods that aren't active, text (HTML) otherwise
-	 * @author Max Milbers
-	 * @author Valerie Isaksen
-	 */
+    /**
+     * This method is fired when showing the order details in the frontend.
+     * It displays the method-specific data.
+     *
+     * @param $virtuemart_order_id
+     * @param $virtuemart_paymentmethod_id
+     * @param $payment_name
+     * @return mixed Null for methods that aren't active, text (HTML) otherwise
+     * @author Max Milbers
+     * @author Valerie Isaksen
+     */
 	public function plgVmOnShowOrderFEPayment ($virtuemart_order_id, $virtuemart_paymentmethod_id, &$payment_name) {
 
 		$this->onShowOrderFE ($virtuemart_order_id, $virtuemart_paymentmethod_id, $payment_name);
@@ -599,15 +452,15 @@ class plgVmpaymentEverypay extends vmPSPlugin
 	}
 	 */
 
-	/**
-	 * This method is fired when showing when priting an Order
-	 * It displays the the payment method-specific data.
-	 *
-	 * @param integer $_virtuemart_order_id The order ID
-	 * @param integer $method_id  method used for this order
-	 * @return mixed Null when for payment methods that were not selected, text (HTML) otherwise
-	 * @author Valerie Isaksen
-	 */
+    /**
+     * This method is fired when showing when printing an Order
+     * It displays the payment method-specific data.
+     *
+     * @param $order_number
+     * @param integer $method_id method used for this order
+     * @return mixed Null when for payment methods that were not selected, text (HTML) otherwise
+     * @author Valerie Isaksen
+     */
 	function plgVmonShowOrderPrintPayment ($order_number, $method_id) {
 
 		return $this->onShowOrderPrint ($order_number, $method_id);
