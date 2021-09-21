@@ -12,7 +12,7 @@
 #### Versions support
 
 | Plugin      | VirueMart   | Everypay iFrame |
-| ----------- | ----------- |                 |
+| ----------- | ----------- | --------------- |
 | 3.0.12      | 3.0.12      | Button v1       |
 | 3.4.5       | 3.4 - 3.8   | Button v1       |
-| 3.8.0       | 3.8         | Payform         |
+| 3.8.x       | 3.8         | Payform         |
