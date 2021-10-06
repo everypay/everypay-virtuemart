@@ -17,7 +17,7 @@ JHtml::_(
 
 JHtml::_(
     'stylesheet',
-    JUri::base() . '/plugins/vmpayment/everypay/assets/everypay_modal.css',
+    JUri::base() . '/plugins/vmpayment/everypay/everypay/assets/everypay_modal.css',
     array('version' => 'auto', 'relative' => true),
     array('defer' => 'defer')
 );
@@ -25,7 +25,7 @@ JHtml::_(
 
 JHtml::_(
     'script',
-    JUri::base() . '/plugins/vmpayment/everypay/assets/everypay.js',
+    JUri::base() . '/plugins/vmpayment/everypay/everypay/assets/everypay.js',
     array('version' => 'auto', 'relative' => true),
     array('defer' => 'defer')
 );
