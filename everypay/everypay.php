@@ -225,25 +225,30 @@ class plgVmpaymentEverypay extends vmPSPlugin
         $amount = (round($cart->cartPrices['billTotal'],2) * 100 );
         $publicKey = $this->getPublicKey();
 
-        $html = $this->renderByLayout('iframe', array(
-            'isSandbox' => $isSandbox,
-            'amount' => (round($cart->cartPrices['billTotal'],2) * 100 ),
-            'pk' => $this->getPublicKey()
-        ));
+        $payformUrl = 'https://js.everypay.gr/v3';
+
+        if ($isSandbox == '1') {
+            $payformUrl = 'https://sandbox-js.everypay.gr/v3';
+        }
 
         ?>
-            <script>
-                window.everypayData = {
-                    pk: "<?php echo $publicKey ?>",
-                    amount: <?php echo $amount ?>,
-                    locale: "el",
-                    txnType: "tds",
-                    paymentMethodId: '<?php echo $this->_currentMethod->virtuemart_paymentmethod_id ?? '' ?>'
-                }
-            </script>
+        <script>
+            window.everypayData = {
+                pk: "<?php echo $publicKey ?>",
+                amount: <?php echo $amount ?>,
+                locale: "el",
+                txnType: "tds",
+                paymentMethodId: '<?php echo $this->_currentMethod->virtuemart_paymentmethod_id ?? '' ?>'
+            }
+        </script>
         <?php
 
-        return $html;
+        JHtml::_('stylesheet', JUri::base() . '/plugins/vmpayment/everypay/everypay/assets/everypay_modal.css');
+        vmJsApi::addJScript ( 'payform', $payformUrl);
+        vmJsApi::addJScript ( 'everypay', JUri::base() . 'plugins/vmpayment/everypay/everypay/assets/everypay.js');
+
+
+        return '';
     }
 
     private function getToken()
